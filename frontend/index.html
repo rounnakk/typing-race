@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Race Multiplayer Game</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div id="login-screen">
+            <h1>Typing Race Multiplayer Game</h1>
+            <div class="login-form">
+                <input type="text" id="player-name" placeholder="Enter your name" maxlength="15">
+                <button id="join-btn">Join Game</button>
+            </div>
+        </div>
+
+        <div id="waiting-room" style="display: none;">
+            <h2>Waiting Room</h2>
+            <p>Waiting for players to join...</p>
+            <div class="player-list">
+                <h3>Players:</h3>
+                <ul id="waiting-players"></ul>
+            </div>
+            <button id="start-game-btn">Start Game</button>
+            <p class="waiting-message">Need at least 2 players to start</p>
+        </div>
+
+        <div id="game-screen" style="display: none;">
+            <div class="game-header">
+                <h2>Typing Race</h2>
+                <div id="timer">Time: 0s</div>
+            </div>
+            
+            <div class="paragraph-container">
+                <p id="paragraph-text"></p>
+            </div>
+            
+            <div class="typing-area">
+                <textarea id="typing-input" placeholder="Start typing when the game begins..."></textarea>
+            </div>
+            
+            <div class="race-track">
+                <h3>Race Progress</h3>
+                <div id="player-tracks"></div>
+            </div>
+            
+            <div class="rankings">
+                <h3>Current Rankings</h3>
+                <ol id="live-rankings"></ol>
+            </div>
+        </div>
+
+        <div id="game-over" style="display: none;">
+            <h2>Game Over!</h2>
+            <div class="final-rankings">
+                <h3>Final Rankings</h3>
+                <ol id="final-rankings"></ol>
+            </div>
+            <button id="play-again-btn">Play Again</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
