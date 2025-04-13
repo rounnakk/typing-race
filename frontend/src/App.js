@@ -11,45 +11,99 @@ const AppContainer = styled.div`
   padding: 20px;
 `;
 
+// Get the backend URL from environment variables with fallback
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL ;
+
 function App() {
   const [screen, setScreen] = useState('login');
   const [playerName, setPlayerName] = useState('');
   const [socket, setSocket] = useState(null);
   const [players, setPlayers] = useState([]);
+  const [isConnecting, setIsConnecting] = useState(false);
   const [gameData, setGameData] = useState({
     paragraph: '',
     rankings: [],
     timer: 0
   });
 
+  // Wake up server with a GET request before connecting to WebSocket
+  const wakeUpServer = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/`);
+      if (response.ok) {
+        console.log('Server is awake and ready');
+        return true;
+      } else {
+        console.error('Server responded with an error:', response.status);
+        return false;
+      }
+    } catch (error) {
+      console.error('Error waking up server:', error);
+      return false;
+    }
+  };
+
   // Connect to WebSocket server
-  const connectToServer = (name) => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.hostname || 'localhost';
-    const port = '8000'; // Server port
+  const connectToServer = async (name) => {
+    setIsConnecting(true);
     
-    const wsUrl = `${protocol}//${host}:${port}/ws/${encodeURIComponent(name)}`;
-    const ws = new WebSocket(wsUrl);
-    
-    ws.onopen = () => {
-      console.log('Connected to server');
-      setSocket(ws);
-      setScreen('waiting');
-    };
-    
-    ws.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      handleServerMessage(message);
-    };
-    
-    ws.onclose = () => {
-      console.log('Disconnected from server');
-      // Optionally handle reconnection
-    };
-    
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
+    try {
+      // First wake up the server
+      const isAwake = await wakeUpServer();
+      
+      if (!isAwake) {
+        alert('Could not connect to the server. Please try again later.');
+        setIsConnecting(false);
+        return;
+      }
+      
+      // Then establish the WebSocket connection
+      // Convert HTTP/HTTPS to WS/WSS
+      const wsProtocol = BACKEND_URL.startsWith('https') ? 'wss' : 'ws';
+      const wsUrl = `${wsProtocol}://${BACKEND_URL.replace(/^https?:\/\//, '')}/ws/${encodeURIComponent(name)}`;
+      
+      const ws = new WebSocket(wsUrl);
+      
+      ws.onopen = () => {
+        console.log('Connected to server');
+        setSocket(ws);
+        setScreen('waiting');
+        setIsConnecting(false);
+      };
+      
+      ws.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        handleServerMessage(message);
+      };
+      
+      ws.onclose = () => {
+        console.log('Disconnected from server');
+        // Optionally handle reconnection or show a message
+        if (screen !== 'login') {
+          alert('Connection to the server was lost. Please refresh the page.');
+        }
+        setIsConnecting(false);
+      };
+      
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        alert('Error connecting to the game server. Please try again later.');
+        setIsConnecting(false);
+      };
+      
+      // Set a connection timeout in case the WebSocket handshake gets stuck
+      setTimeout(() => {
+        if (ws.readyState !== WebSocket.OPEN) {
+          ws.close();
+          alert('Connection timed out. Please try again later.');
+          setIsConnecting(false);
+        }
+      }, 10000); // 10-second timeout
+    } catch (error) {
+      console.error('Error in connection process:', error);
+      alert('An unexpected error occurred. Please try again.');
+      setIsConnecting(false);
+    }
   };
 
   // Handle messages from the server
@@ -144,7 +198,10 @@ function App() {
   return (
     <AppContainer>
       {screen === 'login' && (
-        <LoginScreen onLogin={handleLogin} />
+        <LoginScreen 
+          onLogin={handleLogin} 
+          isConnecting={isConnecting}
+        />
       )}
       
       {screen === 'waiting' && (

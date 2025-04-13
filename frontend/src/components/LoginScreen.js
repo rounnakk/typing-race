@@ -38,6 +38,11 @@ const Input = styled.input`
     border-color: #00cec9;
     box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
   }
+  
+  &:disabled {
+    background: rgba(255, 255, 255, 0.6);
+    cursor: not-allowed;
+  }
 `;
 
 const Button = styled.button`
@@ -50,8 +55,9 @@ const Button = styled.button`
   font-size: 16px;
   transition: background-color 0.3s, transform 0.2s;
   font-weight: bold;
+  position: relative;
   
-  &:hover {
+  &:hover:not(:disabled) {
     background-color: #00b5ad;
     transform: scale(1.05);
   }
@@ -62,12 +68,35 @@ const Button = styled.button`
   }
 `;
 
-function LoginScreen({ onLogin }) {
+const LoadingSpinner = styled.div`
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s linear infinite;
+  margin-right: 8px;
+  
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+`;
+
+const StatusMessage = styled.p`
+  margin-top: 15px;
+  color: #dfe6e9;
+  font-size: 14px;
+`;
+
+function LoginScreen({ onLogin, isConnecting }) {
   const [name, setName] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (name.trim()) {
+    if (name.trim() && !isConnecting) {
       onLogin(name);
     }
   };
@@ -82,9 +111,24 @@ function LoginScreen({ onLogin }) {
           maxLength="15"
           value={name}
           onChange={(e) => setName(e.target.value)}
+          disabled={isConnecting}
           required
         />
-        <Button type="submit">Join Game</Button>
+        <Button type="submit" disabled={isConnecting || !name.trim()}>
+          {isConnecting ? (
+            <>
+              <LoadingSpinner /> Connecting...
+            </>
+          ) : (
+            'Join Game'
+          )}
+        </Button>
+        
+        {isConnecting && (
+          <StatusMessage>
+            Waking up the server... This may take a moment.
+          </StatusMessage>
+        )}
       </LoginForm>
     </LoginContainer>
   );
